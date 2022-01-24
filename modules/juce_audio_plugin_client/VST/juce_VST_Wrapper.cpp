@@ -1426,7 +1426,7 @@ private:
 
     void setValueAndNotifyIfChanged (AudioProcessorParameter& param, float newValue)
     {
-        if (param.getValue() == newValue)
+        if (approximatelyEqual (param.getValue(), newValue))
             return;
 
         inParameterChangedCallback = true;

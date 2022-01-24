@@ -626,7 +626,7 @@ static thread_local bool inParameterChangedCallback = false;
 
 static void setValueAndNotifyIfChanged (AudioProcessorParameter& param, float newValue)
 {
-    if (param.getValue() == newValue)
+    if (approximatelyEqual (param.getValue(), newValue))
         return;
 
     const InParameterChangedCallbackSetter scopedSetter { inParameterChangedCallback };
