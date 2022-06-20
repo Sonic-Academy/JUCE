@@ -737,11 +737,12 @@ public:
         if (style == RotaryHorizontalDrag
             || style == RotaryVerticalDrag
             || style == IncDecButtons
-            || ((style == LinearHorizontal || style == LinearVertical || style == LinearBar || style == LinearBarVertical)
+            || ((style == LinearHorizontal || style == TwoValueHorizontal
+                || style == LinearVertical || style == LinearBar || style == LinearBarVertical)
                 && ! snapsToMousePos))
         {
             auto mouseDiff = (style == RotaryHorizontalDrag
-                                || style == LinearHorizontal
+                                || style == LinearHorizontal || style == TwoValueHorizontal
                                 || style == LinearBar
                                 || (style == IncDecButtons && incDecDragDirectionIsHorizontal()))
                               ? e.position.x - mouseDragStartPos.x
