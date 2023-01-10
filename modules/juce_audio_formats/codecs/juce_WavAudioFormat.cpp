@@ -968,9 +968,41 @@ namespace WavFileHelpers
 }
 
 //==============================================================================
+/*
+static void littleEndian32BitToChars (int32 value, void* destBytes) noexcept
+{
+    static_cast<uint8*> (destBytes)[0] = (uint8) value;
+    static_cast<uint8*> (destBytes)[1] = (uint8) (value >> 8);
+    static_cast<uint8*> (destBytes)[2] = (uint8) (value >> 16);
+    static_cast<uint8*> (destBytes)[3] = (uint8) (value >> 24);
+}
+*/
+
 class WavAudioFormatReader  : public AudioFormatReader
 {
 public:
+    bool isWaveFileNotRespectingPadding (InputStream* positionAtNextChunkWithoutPadding)
+    {
+        if (positionAtNextChunkWithoutPadding->isExhausted())
+            return false;
+
+        auto position = positionAtNextChunkWithoutPadding->getPosition();
+        auto chunkType = positionAtNextChunkWithoutPadding->readInt();
+        positionAtNextChunkWithoutPadding->setPosition (position);
+
+        StringArray possibleChunkTypes { "fmt ", "data", "bext", "smpl",
+                                         "inst", "INST", "cue ", "axml",
+                                         "LIST", "acid", "Trkn" };
+
+        for (auto ct : possibleChunkTypes)
+        {
+            if (chunkType == WavFileHelpers::chunkName (ct.toRawUTF8()))
+                return true;
+        }
+
+        return false;
+    }
+
     WavAudioFormatReader (InputStream* in)  : AudioFormatReader (in, wavFormatName)
     {
         using namespace WavFileHelpers;
@@ -1022,6 +1054,14 @@ public:
                 auto chunkType = input->readInt();
                 auto length = (uint32) input->readInt();
                 auto chunkEnd = input->getPosition() + length + (length & 1);
+
+                /*
+                char chars[4];
+                littleEndian32BitToChars (chunkType, chars);
+                DBG ("chunkType " << String (chars, 4));
+                DBG ("length " << String (length));
+                DBG ("End " << String (length + (length & 1)));
+                */
 
                 if (chunkType == chunkName ("fmt "))
                 {
@@ -1221,7 +1261,21 @@ public:
                     break;
                 }
 
-                input->setPosition (chunkEnd);
+                if ((length & 1) == 0)
+                {
+                    input->setPosition (chunkEnd);
+                }
+                else
+                {
+                    // data should be padded to have an even number of bytes.
+                    // Some wavefiles aren't respecting that though, so we
+                    // check if we have the next chunk without padding
+                    // as a workaround for those.
+                    input->setPosition (chunkEnd - 1);
+
+                    if (! isWaveFileNotRespectingPadding (input))
+                        input->setPosition (chunkEnd);
+                }
             }
         }
 
