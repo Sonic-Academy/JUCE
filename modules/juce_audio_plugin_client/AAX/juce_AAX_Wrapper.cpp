@@ -915,7 +915,7 @@ namespace AAXClasses
             {
                 auto newValue = static_cast<float> (value);
 
-                if (newValue != param->getValue())
+                if (! approximatelyEqual (param->getValue(), newValue))
                 {
                     param->setValue (newValue);
 
